@@ -91,6 +91,11 @@ impl RootDirectory {
                 max_len = mp.path.len() - 1;
                 idx = i;
             }
+
+            fn print_type_of<T>(_: &T) {
+                panic!("Type is: {}", core::any::type_name::<T>());
+            }
+
         }
 
         if max_len == 0 {
@@ -133,10 +138,13 @@ impl VfsNodeOps for RootDirectory {
     }
 
     fn rename(&self, src_path: &str, dst_path: &str) -> VfsResult {
+        log::debug!("ROOT_DIR::rename: {} to {}", src_path, dst_path);
+
         self.lookup_mounted_fs(src_path, |fs, rest_path| {
             if rest_path.is_empty() {
                 ax_err!(PermissionDenied) // cannot rename mount points
             } else {
+                log::debug!("else");
                 fs.root_dir().rename(rest_path, dst_path)
             }
         })
@@ -306,5 +314,9 @@ pub(crate) fn rename(old: &str, new: &str) -> AxResult {
         warn!("dst file already exist, now remove it");
         remove_file(None, new)?;
     }
-    parent_node_of(None, old).rename(old, new)
+    // parent_node_of(None, old).rename(old, new)
+    debug!("pub(crate) root::rename");
+    let root_dir = parent_node_of(None, old);
+    debug!("back from parent_node_of");
+    root_dir.rename(old, new)
 }

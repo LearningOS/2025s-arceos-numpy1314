@@ -142,7 +142,13 @@ impl Write for Stdout {
 
 impl Write for StdoutLock<'_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.write(buf)
+        // self.inner.write(buf)
+        let red_ansi = b"\x1b[96m";
+        // let reset_ansi = b"\x1b[0m";
+        let out = &mut self.inner;
+        out.write(red_ansi);
+        out.write(buf)
+        // out.write(reset_ansi);
     }
     fn flush(&mut self) -> io::Result<()> {
         self.inner.flush()
@@ -169,5 +175,10 @@ pub fn __print_impl(args: core::fmt::Arguments) {
         arceos_api::stdio::ax_console_write_fmt(args).unwrap();
     } else {
         stdout().lock().write_fmt(args).unwrap();
+        // on axstd
+        // let mut out = stdout().lock();
+        // let _ = out.write_all(b"\x1b[32m");
+        // let _ = out.write_fmt(args);
+        // let _ = out.write_all(b"\x1b[0m");
     }
 }

@@ -77,7 +77,8 @@ fn run_guest(ctx: &mut VmCpuRegisters) -> bool {
 
 #[allow(unreachable_code)]
 fn vmexit_handler(ctx: &mut VmCpuRegisters) -> bool {
-    use scause::{Exception, Trap};
+    // use scause::{Exception, Trap};
+    use scause::{Exception, Interrupt, Trap};
 
     let scause = scause::read();
     match scause.cause() {
@@ -101,17 +102,26 @@ fn vmexit_handler(ctx: &mut VmCpuRegisters) -> bool {
                 panic!("bad sbi message! ");
             }
         },
+
         Trap::Exception(Exception::IllegalInstruction) => {
-            panic!("Bad instruction: {:#x} sepc: {:#x}",
-                stval::read(),
-                ctx.guest_regs.sepc
-            );
+            ctx.guest_regs.gprs.set_reg(regs::GprIndex::A0, 0x6688);
+            ctx.guest_regs.sepc += 4;
+            // panic!("Bad instruction: {:#x} sepc: {:#x}",
+            //     stval::read(),
+            //     ctx.guest_regs.sepc
+            // );
         },
+
         Trap::Exception(Exception::LoadGuestPageFault) => {
-            panic!("LoadGuestPageFault: stval{:#x} sepc: {:#x}",
-                stval::read(),
-                ctx.guest_regs.sepc
-            );
+            ctx.guest_regs.gprs.set_reg(regs::GprIndex::A1, 0x1234);
+            ctx.guest_regs.sepc += 4;
+            // panic!("LoadGuestPageFault: stval{:#x} sepc: {:#x}",
+            //     stval::read(),
+            //     ctx.guest_regs.sepc
+            // );
+        },
+        Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            ctx.guest_regs.sepc += 4;
         },
         _ => {
             panic!(
